@@ -1,0 +1,208 @@
+/* ── Global Background ── */
+.stApp {
+    background-color: #0f0f1a !important;
+    color: #ffffff !important;
+}
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {
+    background-color: #13132a !important;
+    width: 260px !important;
+}
+[data-testid="stSidebar"] * {
+    color: #ffffff !important;
+}
+[data-testid="stSidebar"] .stMarkdown p {
+    color: #8892b0 !important;
+}
+
+/* ── Main content area ── */
+.main .block-container {
+    background-color: #0f0f1a !important;
+    padding-top: 2rem;
+}
+
+/* ── Metric cards ── */
+[data-testid="metric-container"] {
+    background: linear-gradient(135deg, #7c3aed, #00d4ff);
+    border-radius: 16px !important;
+    padding: 20px !important;
+    border: 1px solid #2a2a4a;
+}
+[data-testid="metric-container"] label {
+    color: rgba(255,255,255,0.8) !important;
+    font-size: 0.85rem !important;
+    font-weight: 500;
+}
+[data-testid="metric-container"] [data-testid="stMetricValue"] {
+    color: #ffffff !important;
+    font-size: 2rem !important;
+    font-weight: 700;
+}
+[data-testid="metric-container"] [data-testid="stMetricDelta"] {
+    color: rgba(255,255,255,0.7) !important;
+}
+
+/* ── Dataframe / Table ── */
+[data-testid="stDataFrame"] {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #2a2a4a;
+}
+[data-testid="stDataFrame"] thead tr th {
+    background-color: #1a1a2e !important;
+    color: #00d4ff !important;
+    font-weight: 600;
+    border-bottom: 1px solid #2a2a4a;
+}
+[data-testid="stDataFrame"] tbody tr:hover td {
+    background-color: #2a2a4a !important;
+}
+[data-testid="stDataFrame"] tbody tr td {
+    color: #ffffff !important;
+    border-bottom: 1px solid #1a1a2e;
+}
+
+/* ── Cards / Panels ── */
+.neo-card {
+    background-color: #1a1a2e;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #2a2a4a;
+    margin-bottom: 1rem;
+}
+
+/* ── Metric card HTML components ── */
+.metric-card {
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+.metric-card .metric-label {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 6px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+.metric-card .metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.1;
+}
+.metric-card .metric-sub {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.6);
+    margin-top: 4px;
+}
+.metric-grad-1 { background: linear-gradient(135deg, #7c3aed, #00d4ff); }
+.metric-grad-2 { background: linear-gradient(135deg, #7c3aed, #e040fb); }
+.metric-grad-3 { background: linear-gradient(135deg, #00d4ff, #06b6d4); }
+.metric-grad-4 { background: linear-gradient(135deg, #e040fb, #7c3aed); }
+
+/* ── Info / alert boxes ── */
+.custom-info {
+    background: #1a1a2e;
+    border-left: 4px solid #e040fb;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 1rem 0;
+    color: #ffffff;
+}
+.custom-stat {
+    background: #1a1a2e;
+    border: 1px solid #7c3aed;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 1rem 0;
+    color: #ffffff;
+}
+.custom-stat h4 {
+    color: #00d4ff;
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+.custom-stat p {
+    color: #8892b0;
+    margin: 4px 0;
+}
+.custom-stat .highlight {
+    color: #a78bfa;
+    font-weight: 600;
+}
+
+/* ── Headings ── */
+h1, h2, h3 {
+    color: #ffffff !important;
+}
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+}
+.page-subtitle {
+    font-size: 0.95rem;
+    color: #8892b0;
+    margin-bottom: 2rem;
+}
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #00d4ff;
+    margin: 1.5rem 0 0.75rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #2a2a4a;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0f0f1a; }
+::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9d5cf0; }
+
+/* ── Streamlit selectbox / inputs ── */
+.stSelectbox > div > div {
+    background-color: #1a1a2e !important;
+    border: 1px solid #2a2a4a !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+}
+.stTextInput > div > div > input {
+    background-color: #1a1a2e !important;
+    border: 1px solid #2a2a4a !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+}
+.stDateInput > div > div > input {
+    background-color: #1a1a2e !important;
+    border: 1px solid #2a2a4a !important;
+    color: #ffffff !important;
+}
+
+/* ── Buttons ── */
+.stButton > button {
+    background: linear-gradient(135deg, #7c3aed, #00d4ff) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+}
+.stButton > button:hover {
+    opacity: 0.85 !important;
+}
+
+/* ── Divider ── */
+hr {
+    border-color: #2a2a4a !important;
+}
+
+/* ── st.info / st.warning overrides ── */
+[data-testid="stAlert"] {
+    background-color: #1a1a2e !important;
+    border: 1px solid #2a2a4a !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+}
