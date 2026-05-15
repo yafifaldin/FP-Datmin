@@ -14,183 +14,151 @@ st.set_page_config(
     layout="wide",
 )
 
-css_path = Path(__file__).parent.parent / "assets" / "style.css"
-if css_path.exists():
-    st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
+def _inject_css():
+    p = Path(__file__).parent.parent / "assets" / "style.css"
+    if p.exists():
+        with open(p, encoding="utf-8") as f:
+            st.html("<style>" + f.read() + "</style>")
 
-# ── Date window ────────────────────────────────────────────────────────────────
-today = datetime.utcnow().date()
+_inject_css()
+
+today  = datetime.utcnow().date()
 end_dt = today + timedelta(days=6)
 start_str = today.isoformat()
-end_str = end_dt.isoformat()
+end_str   = end_dt.isoformat()
 
-st.markdown(
-    f"""
-    <div class="page-title">Live NEO Feed</div>
-    <div class="page-subtitle">
-        Near-Earth Objects approaching Earth &nbsp;·&nbsp;
-        <span style="color:#00d4ff;">{start_str}</span> →
-        <span style="color:#00d4ff;">{end_str}</span>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+st.html(f"""
+<p class="page-eyebrow">Earth's Threat Monitor &nbsp;·&nbsp; 01</p>
+<h1 class="page-title">Live NEO Feed</h1>
+<p class="page-subtitle">
+    Close approach data for {start_str} &rarr; {end_str} &nbsp;&middot;&nbsp; Updates every hour
+</p>
+""")
 
-# ── Fetch data ─────────────────────────────────────────────────────────────────
 @st.cache_data(ttl=3600, show_spinner="Fetching NEO data from NASA...")
 def load_feed(start: str, end: str) -> pd.DataFrame:
     raw = get_feed(start, end)
-    df = parse_feed(raw)
+    df  = parse_feed(raw)
     return add_risk_score(df)
 
 try:
     df = load_feed(start_str, end_str)
 except Exception as e:
-    st.error(f"Failed to fetch data from NASA API: {e}")
+    st.error(f"NASA API error: {e}")
     st.stop()
 
 if df.empty:
-    st.warning("No NEO data returned for this date window.")
+    st.warning("No NEO data for this window.")
     st.stop()
 
-# ── Metric cards ───────────────────────────────────────────────────────────────
-total = len(df)
-hazardous = int(df["is_hazardous"].sum())
-fastest = df["velocity_kms"].max()
-closest = df["miss_distance_ld"].min()
+total      = len(df)
+hazardous  = int(df["is_hazardous"].sum())
+fastest    = df["velocity_kms"].max()
+closest    = df["miss_distance_ld"].min()
+fastest_nm = df.loc[df["velocity_kms"].idxmax(), "name"]
+closest_nm = df.loc[df["miss_distance_ld"].idxmin(), "name"]
 
+# ── Stat cards ─────────────────────────────────────────────────────────────────
 c1, c2, c3, c4 = st.columns(4, gap="medium")
 
 with c1:
-    st.markdown(
-        f"""
-        <div class="metric-card metric-grad-1">
-            <div class="metric-label">☄️ TOTAL NEOs THIS WEEK</div>
-            <div class="metric-value">{total}</div>
-            <div class="metric-sub">Close approaches detected</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
+    st.html(f"""
+    <div class="stat-card" style="--acc:#00d4ff">
+        <div class="stat-label">Tracked this week</div>
+        <div class="stat-num">{total}</div>
+        <div class="stat-desc">close approaches detected</div>
+    </div>
+    """)
 with c2:
-    st.markdown(
-        f"""
-        <div class="metric-card metric-grad-2">
-            <div class="metric-label">⚠️ HAZARDOUS ASTEROIDS</div>
-            <div class="metric-value">{hazardous}</div>
-            <div class="metric-sub">Potentially hazardous objects</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
+    st.html(f"""
+    <div class="stat-card" style="--acc:#e040fb">
+        <div class="stat-label">Classified hazardous</div>
+        <div class="stat-num">{hazardous}</div>
+        <div class="stat-desc">{hazardous / max(total, 1) * 100:.0f}% of total tracked</div>
+    </div>
+    """)
 with c3:
-    st.markdown(
-        f"""
-        <div class="metric-card metric-grad-3">
-            <div class="metric-label">🚀 FASTEST (km/s)</div>
-            <div class="metric-value">{fastest:.2f}</div>
-            <div class="metric-sub">Relative approach velocity</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
+    st.html(f"""
+    <div class="stat-card" style="--acc:#a78bfa">
+        <div class="stat-label">Peak velocity (km/s)</div>
+        <div class="stat-num">{fastest:.1f}</div>
+        <div class="stat-desc">{fastest_nm}</div>
+    </div>
+    """)
 with c4:
-    st.markdown(
-        f"""
-        <div class="metric-card metric-grad-4">
-            <div class="metric-label">🌙 CLOSEST (Lunar Distance)</div>
-            <div class="metric-value">{closest:.2f}</div>
-            <div class="metric-sub">Lunar distances from Earth</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.html(f"""
+    <div class="stat-card" style="--acc:#06b6d4">
+        <div class="stat-label">Closest pass (LD)</div>
+        <div class="stat-num">{closest:.2f}</div>
+        <div class="stat-desc">{closest_nm}</div>
+    </div>
+    """)
 
-st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
-
-# ── Daily count bar chart ──────────────────────────────────────────────────────
-st.markdown('<div class="section-title">Daily Approach Count</div>', unsafe_allow_html=True)
+# ── Bar chart ──────────────────────────────────────────────────────────────────
+st.html('<p class="section-label">Approaches per day</p>')
 
 daily = df.groupby(df["date"].dt.date).size().reset_index(name="count")
 daily.columns = ["date", "count"]
 
-n = len(daily)
-colors = [
-    f"rgba({int(124 - (124 - 0) * i / max(n - 1, 1))}, "
-    f"{int(58 + (212 - 58) * i / max(n - 1, 1))}, "
-    f"{int(237 - (237 - 255) * i / max(n - 1, 1))}, 0.9)"
-    for i in range(n)
-]
+max_idx    = int(daily["count"].idxmax())
+bar_colors = ["#00d4ff" if i == max_idx else "#7c3aed" for i in range(len(daily))]
+bar_opac   = [0.9 if i == max_idx else 0.45 for i in range(len(daily))]
 
-fig_bar = go.Figure(
-    go.Bar(
-        x=daily["date"].astype(str),
-        y=daily["count"],
-        marker=dict(color=colors, line=dict(color="#2a2a4a", width=0.5)),
-        text=daily["count"],
-        textposition="outside",
-        textfont=dict(color="#ffffff", size=12),
-        hovertemplate="<b>%{x}</b><br>Asteroids: %{y}<extra></extra>",
-    )
+fig_bar = go.Figure(go.Bar(
+    x=daily["date"].astype(str),
+    y=daily["count"],
+    marker=dict(color=bar_colors, opacity=bar_opac,
+                line=dict(color="rgba(0,0,0,0)", width=0)),
+    hovertemplate="<b>%{x}</b><br>%{y} asteroids<extra></extra>",
+))
+fig_bar.add_annotation(
+    x=daily.loc[max_idx, "date"].isoformat(),
+    y=daily.loc[max_idx, "count"],
+    text=f"  peak &middot; {daily.loc[max_idx, 'count']}",
+    showarrow=False, yanchor="bottom",
+    font=dict(color="#00d4ff", size=11),
 )
 fig_bar.update_layout(
     template="plotly_dark",
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(color="#ffffff", family="sans-serif"),
-    xaxis=dict(
-        showgrid=False,
-        color="#8892b0",
-        tickfont=dict(color="#8892b0"),
-    ),
-    yaxis=dict(
-        gridcolor="#2a2a4a",
-        color="#8892b0",
-        tickfont=dict(color="#8892b0"),
-        title="Number of NEOs",
-    ),
+    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+    font=dict(color="#8892b0", family="sans-serif", size=11),
+    xaxis=dict(showgrid=False, tickfont=dict(color="#3d4460"), linecolor="#161630"),
+    yaxis=dict(gridcolor="#161630", tickfont=dict(color="#3d4460"),
+               title=None, zeroline=False),
     margin=dict(l=0, r=0, t=30, b=0),
-    height=300,
+    height=260, bargap=0.35,
 )
 st.plotly_chart(fig_bar, use_container_width=True)
 
-# ── Interactive dataframe ──────────────────────────────────────────────────────
-st.markdown('<div class="section-title">Asteroid Close Approach Table</div>', unsafe_allow_html=True)
+# ── Table ──────────────────────────────────────────────────────────────────────
+st.html('<p class="section-label">Asteroid close approach table</p>')
+
+if (df["miss_distance_ld"] < 5).any():
+    st.html("""
+    <div class="callout">
+        Rows highlighted in <span class="callout-accent">magenta</span>
+        have miss distance &lt; 5 lunar distances &mdash; considered very close approaches.
+    </div>
+    """)
 
 display_df = df[[
     "name", "date", "diameter_km", "velocity_kms",
     "miss_distance_ld", "is_hazardous", "risk_score"
 ]].copy()
-display_df["date"] = display_df["date"].dt.strftime("%Y-%m-%d")
+display_df["date"]             = display_df["date"].dt.strftime("%Y-%m-%d")
+display_df["diameter_km"]      = display_df["diameter_km"].round(4)
+display_df["velocity_kms"]     = display_df["velocity_kms"].round(2)
+display_df["miss_distance_ld"] = display_df["miss_distance_ld"].round(3)
+display_df["risk_score"]       = display_df["risk_score"].round(4)
 display_df.columns = [
     "Name", "Date", "Diameter (km)", "Velocity (km/s)",
-    "Miss Distance (LD)", "Hazardous", "Risk Score"
+    "Miss Dist (LD)", "Hazardous", "Risk Score",
 ]
-display_df["Diameter (km)"] = display_df["Diameter (km)"].round(4)
-display_df["Velocity (km/s)"] = display_df["Velocity (km/s)"].round(3)
-display_df["Miss Distance (LD)"] = display_df["Miss Distance (LD)"].round(3)
-display_df["Risk Score"] = display_df["Risk Score"].round(4)
-
-close_mask = df["miss_distance_ld"] < 5
-
-st.markdown(
-    """
-    <div class="custom-info">
-        <strong style="color:#e040fb;">⚠️ Highlight:</strong>
-        Rows with <span style="color:#e040fb; font-weight:600;">Miss Distance &lt; 5 LD</span>
-        are marked as very close approaches.
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 
 def highlight_close(row):
-    if row["Miss Distance (LD)"] < 5:
-        return ["background-color: rgba(224,64,251,0.15); color: #ffffff"] * len(row)
-    return [""] * len(row)
+    if row["Miss Dist (LD)"] < 5:
+        return ["background-color: rgba(224,64,251,0.10); color: #e8eeff"] * len(row)
+    return ["color: #8892b0"] * len(row)
 
 styled = display_df.style.apply(highlight_close, axis=1)
-st.dataframe(styled, use_container_width=True, height=420)
+st.dataframe(styled, use_container_width=True, height=400)

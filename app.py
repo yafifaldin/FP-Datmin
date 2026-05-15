@@ -1,5 +1,6 @@
 import streamlit as st
 from pathlib import Path
+from datetime import datetime
 
 st.set_page_config(
     page_title="Earth's Threat Monitor",
@@ -8,93 +9,102 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Inject global CSS ──────────────────────────────────────────────────────────
-css_path = Path(__file__).parent / "assets" / "style.css"
-if css_path.exists():
-    st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
+def _inject_css():
+    p = Path(__file__).parent / "assets" / "style.css"
+    if p.exists():
+        with open(p, encoding="utf-8") as f:
+            st.html("<style>" + f.read() + "</style>")
 
-# ── Sidebar ────────────────────────────────────────────────────────────────────
+_inject_css()
+
 with st.sidebar:
-    st.markdown(
-        """
-        <div style="text-align:center; padding: 1rem 0 0.5rem 0;">
-            <span style="font-size: 2.5rem;">☄️</span>
-            <h2 style="color:#ffffff; margin:0.25rem 0 0 0; font-size:1.1rem; font-weight:700;">
-                Earth's Threat Monitor
-            </h2>
-            <p style="color:#8892b0; font-size:0.8rem; margin-top:0.25rem;">
-                Powered by NASA NeoWs API
-            </p>
-        </div>
-        <hr style="border-color:#2a2a4a; margin: 0.75rem 0;">
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-        <p style="color:#8892b0; font-size:0.82rem; line-height:1.6; padding:0 0.5rem;">
-        Real-time Near-Earth Object tracking and risk analysis.
-        Monitor asteroid approaches, velocities, and potential hazards
-        using live data from NASA's Center for Near Earth Object Studies.
-        </p>
-        <hr style="border-color:#2a2a4a; margin: 0.75rem 0;">
-        <p style="color:#2a2a4a; font-size:0.7rem; text-align:center; padding-top:0.5rem;">
-            Data: NASA NeoWs · v1.0
-        </p>
-        """,
-        unsafe_allow_html=True,
-    )
-
-# ── Landing page content ───────────────────────────────────────────────────────
-st.markdown(
-    """
-    <div style="text-align:center; padding: 3rem 0 2rem 0;">
-        <span style="font-size:4rem;">☄️</span>
-        <h1 style="font-size:2.8rem; font-weight:800; color:#ffffff; margin:0.5rem 0 0.25rem 0;">
+    st.html("""
+    <div style="padding: 1.5rem 1rem 1rem;">
+        <div style="font-size:0.62rem; letter-spacing:2px; text-transform:uppercase;
+                    color:#2a2e4a; margin-bottom:8px;">Navigation</div>
+        <div style="font-size:1rem; font-weight:700; color:#e8eeff; margin-bottom:2px;">
             Earth's Threat Monitor
-        </h1>
-        <p style="font-size:1.1rem; color:#8892b0; max-width:600px; margin:0 auto;">
-            Real-time Near-Earth Object surveillance dashboard.<br>
-            Tracking asteroids, velocities, and close approaches — powered by NASA NeoWs.
-        </p>
+        </div>
+        <div style="font-size:0.72rem; color:#2a2e4a;">NASA NeoWs API</div>
     </div>
-    """,
-    unsafe_allow_html=True,
-)
+    <div style="height:1px; background:#161630; margin:0 1rem 1rem;"></div>
+    """)
 
-cols = st.columns(4, gap="medium")
-cards = [
-    ("☄️", "Live NEO Feed", "7-day asteroid window", "#7c3aed", "#00d4ff"),
-    ("⚠️", "Risk Analysis", "Threat scoring & scatter", "#e040fb", "#7c3aed"),
-    ("🔭", "Orbital Deep Dive", "Class distributions & stats", "#00d4ff", "#06b6d4"),
-    ("📈", "Historical Trends", "Long-term approach patterns", "#06b6d4", "#00d4ff"),
-]
-for col, (icon, title, desc, c1, c2) in zip(cols, cards):
-    with col:
-        st.markdown(
-            f"""
-            <div style="
-                background: linear-gradient(135deg, {c1}22, {c2}22);
-                border: 1px solid {c1}55;
-                border-radius: 16px;
-                padding: 24px 20px;
-                text-align: center;
-                cursor: default;
-            ">
-                <div style="font-size:2rem; margin-bottom:0.5rem;">{icon}</div>
-                <div style="font-size:1rem; font-weight:700; color:#ffffff; margin-bottom:0.3rem;">{title}</div>
-                <div style="font-size:0.82rem; color:#8892b0;">{desc}</div>
+today = datetime.utcnow().strftime("%d %b %Y")
+
+st.html(f"""
+<div style="max-width:680px; padding: 1rem 0 0;">
+
+    <div class="status-row">
+        <span class="live-dot"></span>
+        <span>Live</span>
+        <span class="status-sep">&nbsp;·&nbsp;</span>
+        <span>NASA NeoWs</span>
+        <span class="status-sep">&nbsp;·&nbsp;</span>
+        <span>{today}</span>
+    </div>
+
+    <h1 style="font-size:2.6rem; font-weight:800; color:#e8eeff;
+               margin:0 0 10px; line-height:1.1; letter-spacing:-1px;">
+        Earth's Threat Monitor
+    </h1>
+    <p style="font-size:1rem; color:#3d4460; line-height:1.7; margin:0 0 2.5rem; max-width:520px;">
+        Near-Earth Object surveillance powered by NASA's Center for Near Earth Object Studies.
+        Tracks asteroid close approaches, relative velocities, and impact risk in real time.
+    </p>
+
+    <div style="border-top:1px solid #161630;">
+
+        <div class="landing-nav-item">
+            <div class="landing-nav-num">01</div>
+            <div class="landing-nav-body">
+                <div class="landing-nav-title">Live NEO Feed</div>
+                <div class="landing-nav-desc">
+                    Real-time 7-day asteroid close approach window — count, velocity,
+                    miss distance, and hazard classification.
+                </div>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        </div>
 
-st.markdown(
-    """
-    <div style="text-align:center; margin-top:2.5rem; color:#8892b0; font-size:0.85rem;">
-        Use the sidebar navigation to explore each section.
+        <div class="landing-nav-item">
+            <div class="landing-nav-num">02</div>
+            <div class="landing-nav-body">
+                <div class="landing-nav-title">Risk Analysis</div>
+                <div class="landing-nav-desc">
+                    Composite threat scoring across diameter, velocity, and proximity.
+                    Top-15 ranking and scatter plot by miss distance.
+                </div>
+            </div>
+        </div>
+
+        <div class="landing-nav-item">
+            <div class="landing-nav-num">03</div>
+            <div class="landing-nav-body">
+                <div class="landing-nav-title">Orbital Deep Dive</div>
+                <div class="landing-nav-desc">
+                    Orbit class distributions, hazardous proportions,
+                    magnitude vs. diameter, and Kruskal-Wallis significance test.
+                </div>
+            </div>
+        </div>
+
+        <div class="landing-nav-item" style="border-bottom:none;">
+            <div class="landing-nav-num">04</div>
+            <div class="landing-nav-body">
+                <div class="landing-nav-title">Historical Trends</div>
+                <div class="landing-nav-desc">
+                    Six months of approach frequency, miss distance patterns,
+                    and size distribution over time.
+                </div>
+            </div>
+        </div>
+
     </div>
-    """,
-    unsafe_allow_html=True,
-)
+
+    <p style="font-size:0.65rem; color:#1e1e3a; margin-top:2.5rem;
+              letter-spacing:1px; text-transform:uppercase;">
+        Select a page from the sidebar to begin
+    </p>
+
+</div>
+""")

@@ -5,15 +5,19 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+_PROJECT_ROOT = Path(__file__).parent.parent
+load_dotenv(dotenv_path=_PROJECT_ROOT / ".env", override=True)
 
-NASA_API_KEY = os.getenv("NASA_API_KEY", "DEMO_KEY")
-BASE_URL = "https://api.nasa.gov/neo/rest/v1"
-CACHE_PATH = Path(__file__).parent.parent / "data" / "cache.pkl"
+BASE_URL  = "https://api.nasa.gov/neo/rest/v1"
+CACHE_PATH = _PROJECT_ROOT / "data" / "cache.pkl"
+
+
+def _api_key() -> str:
+    return os.getenv("NASA_API_KEY", "DEMO_KEY")
 
 
 def _get(endpoint: str, params: dict) -> dict:
-    params["api_key"] = NASA_API_KEY
+    params["api_key"] = _api_key()
     resp = requests.get(f"{BASE_URL}/{endpoint}", params=params, timeout=10)
     resp.raise_for_status()
     return resp.json()
