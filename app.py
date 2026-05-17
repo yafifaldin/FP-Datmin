@@ -18,67 +18,67 @@ def _inject_css():
 
 _inject_css()
 
-with st.sidebar:
-    st.markdown("""
-    <div style="padding:1.5rem 1rem 1rem;">
-        <div style="font-size:0.62rem;letter-spacing:2px;text-transform:uppercase;color:#8892b0;margin-bottom:8px;">Navigation</div>
-        <div style="font-size:1rem;font-weight:700;color:#e8eeff;margin-bottom:2px;">Earth's Threat Monitor</div>
-        <div style="font-size:0.72rem;color:#8892b0;">NASA NeoWs API</div>
-    </div>
-    <div style="height:1px;background:#1e1e3a;margin:0 1rem 1rem;"></div>
-    """, unsafe_allow_html=True)
-
 today = datetime.utcnow().strftime("%d %b %Y").upper()
 
-st.markdown(f"""
-<div style="max-width:680px;padding:1rem 0 0;">
-    <div style="display:flex;align-items:center;gap:8px;font-size:0.7rem;color:#8892b0;letter-spacing:1px;text-transform:uppercase;margin-bottom:2rem;">
-        <span style="width:6px;height:6px;border-radius:50%;background:#00d4ff;box-shadow:0 0 6px #00d4ff88;display:inline-block;"></span>
-        <span>Live</span>
-        <span style="color:#8892b0;">&nbsp;·&nbsp;</span>
-        <span>NASA NeoWs</span>
-        <span style="color:#8892b0;">&nbsp;·&nbsp;</span>
-        <span>{today}</span>
-    </div>
-    <h1 style="font-size:2.6rem;font-weight:800;color:#e8eeff;margin:0 0 10px;line-height:1.1;letter-spacing:-1px;">
-        Earth's Threat Monitor
-    </h1>
-    <p style="font-size:1rem;color:#ffffff;line-height:1.7;margin:0 0 2.5rem;max-width:520px;">
-        Near-Earth Object surveillance powered by NASA's Center for Near Earth Object Studies.
-        Tracks asteroid close approaches, relative velocities, and impact risk in real time.
-    </p>
-    <div style="border-top:1px solid #1e1e3a;">
-        <div style="padding:16px 0;border-bottom:1px solid #1e1e3a;display:flex;align-items:baseline;gap:20px;">
-            <div style="font-size:0.62rem;font-weight:600;letter-spacing:2px;color:#8892b0;min-width:24px;">01</div>
-            <div>
-                <div style="font-size:0.92rem;font-weight:600;color:#c0c8e0;margin-bottom:2px;">Live NEO Feed</div>
-                <div style="font-size:0.78rem;color:#ffffff;line-height:1.5;">Real-time 7-day asteroid close approach window — count, velocity, miss distance, and hazard classification.</div>
-            </div>
-        </div>
-        <div style="padding:16px 0;border-bottom:1px solid #1e1e3a;display:flex;align-items:baseline;gap:20px;">
-            <div style="font-size:0.62rem;font-weight:600;letter-spacing:2px;color:#8892b0;min-width:24px;">02</div>
-            <div>
-                <div style="font-size:0.92rem;font-weight:600;color:#c0c8e0;margin-bottom:2px;">Risk Analysis</div>
-                <div style="font-size:0.78rem;color:#ffffff;line-height:1.5;">Composite threat scoring across diameter, velocity, and proximity. Top-15 ranking and scatter plot by miss distance.</div>
-            </div>
-        </div>
-        <div style="padding:16px 0;border-bottom:1px solid #1e1e3a;display:flex;align-items:baseline;gap:20px;">
-            <div style="font-size:0.62rem;font-weight:600;letter-spacing:2px;color:#8892b0;min-width:24px;">03</div>
-            <div>
-                <div style="font-size:0.92rem;font-weight:600;color:#c0c8e0;margin-bottom:2px;">Orbital Deep Dive</div>
-                <div style="font-size:0.78rem;color:#ffffff;line-height:1.5;">Orbit class distributions, hazardous proportions, magnitude vs. diameter, and Kruskal-Wallis significance test.</div>
-            </div>
-        </div>
-        <div style="padding:16px 0;display:flex;align-items:baseline;gap:20px;">
-            <div style="font-size:0.62rem;font-weight:600;letter-spacing:2px;color:#8892b0;min-width:24px;">04</div>
-            <div>
-                <div style="font-size:0.92rem;font-weight:600;color:#c0c8e0;margin-bottom:2px;">Historical Trends</div>
-                <div style="font-size:0.78rem;color:#ffffff;line-height:1.5;">Six months of approach frequency, miss distance patterns, and size distribution over time.</div>
-            </div>
-        </div>
-    </div>
-    <p style="font-size:0.65rem;color:#8892b0;margin-top:2.5rem;letter-spacing:1px;text-transform:uppercase;">
-        Select a page from the sidebar to begin
-    </p>
-</div>
-""", unsafe_allow_html=True)
+# ── Header ────────────────────────────────────────────────────────────────────
+st.caption(f"🔵 LIVE  ·  NASA NEOWS  ·  {today}")
+st.title("☄️ Earth's Threat Monitor")
+
+st.markdown("""
+Dashboard ini memvisualisasikan dan menganalisis data asteroid **Near-Earth Object (NEO)**
+secara langsung dari **NASA NeoWs API** — API publik resmi NASA yang menyediakan data
+pendekatan asteroid ke Bumi secara real-time.
+""")
+
+st.markdown("""
+Secara teknis, data diambil menggunakan library `requests` dengan dua endpoint utama:
+**feed** untuk data pendekatan 7 hari ke depan, dan **browse** untuk data historis orbital.
+Setiap respons API di-parse menggunakan `pandas` menjadi dataframe terstruktur, lalu
+divisualisasikan dengan `plotly`. Data live di-cache selama **1 jam** via `@st.cache_data`
+supaya tidak over-hit API limit, sedangkan data historis disimpan lokal dalam format `.pkl`.
+
+Salah satu fitur analitik utama adalah **Composite Risk Score** — metrik buatan sendiri
+yang menghitung tingkat ancaman asteroid berdasarkan kombinasi ukuran diameter, kecepatan
+relatif, dan jarak pendekatan, sebagai alternatif dari label biner hazardous NASA yang statis.
+""")
+
+st.divider()
+
+# ── Nav items ─────────────────────────────────────────────────────────────────
+col1, col2 = st.columns(2, gap="large")
+
+with col1:
+    st.markdown("**`01` — Live NEO Feed**")
+    st.markdown("""
+    Menampilkan asteroid yang mendekati Bumi dalam window 7 hari ke depan secara real-time.
+    Dilengkapi 4 metric card (total NEO, jumlah hazardous, kecepatan tertinggi, jarak terdekat),
+    bar chart distribusi harian, dan tabel interaktif dengan highlight untuk objek di bawah
+    5 Lunar Distance.
+    """)
+
+    st.markdown("**`03` — Orbital Deep Dive**")
+    st.markdown("""
+    Analisis mendalam berdasarkan kelas orbit asteroid (Apollo, Amor, Aten, Atira).
+    Menggunakan violin plot untuk distribusi kecepatan, stacked bar untuk proporsi hazardous,
+    dan uji statistik **Kruskal-Wallis** untuk memverifikasi apakah perbedaan kecepatan
+    antar kelas orbit signifikan secara statistik (p-value ditampilkan langsung).
+    """)
+
+with col2:
+    st.markdown("**`02` — Risk Analysis**")
+    st.markdown("""
+    Analisis ancaman berbasis Composite Risk Score — formula **(diameter × velocity) / miss_distance**
+    yang dikembangkan sendiri untuk mengukur tingkat bahaya secara lebih dinamis dibanding
+    label hazardous NASA. Visualisasi berupa scatter plot multivariabel, ranking top-15,
+    dan donut chart distribusi risiko.
+    """)
+
+    st.markdown("**`04` — Historical Trends**")
+    st.markdown("""
+    Tren historis 6 bulan terakhir dari data pendekatan asteroid. Menampilkan rata-rata
+    miss distance bulanan, distribusi ukuran diameter (log scale), dan frekuensi pendekatan
+    sangat dekat (di bawah 10 Lunar Distance) per bulan. Data di-cache lokal untuk efisiensi.
+    """)
+
+st.divider()
+st.caption("Pilih halaman dari sidebar untuk mulai eksplorasi →")
