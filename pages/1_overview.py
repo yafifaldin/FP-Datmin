@@ -12,7 +12,7 @@ def _inject_css():
     p = Path(__file__).parent.parent / "assets" / "style.css"
     if p.exists():
         with open(p, encoding="utf-8") as f:
-            st.html("<style>" + f.read() + "</style>")
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 _inject_css()
 
@@ -21,13 +21,13 @@ end_dt = today + timedelta(days=6)
 start_str = today.isoformat()
 end_str   = end_dt.isoformat()
 
-st.html(f"""
-<p class="page-eyebrow">Earth's Threat Monitor &nbsp;·&nbsp; 01</p>
+st.markdown(f"""
+<p class="page-eyebrow">Earth's Threat Monitor  ·  01</p>
 <h1 class="page-title">Live NEO Feed</h1>
 <p class="page-subtitle">
-    Close approach data for {start_str} &rarr; {end_str} &nbsp;&middot;&nbsp; Updates every hour
+    Close approach data for {start_str} → {end_str}  ·  Updates every hour
 </p>
-""")
+""", unsafe_allow_html=True)
 
 @st.cache_data(ttl=3600, show_spinner="Fetching NEO data from NASA...")
 def load_feed(start: str, end: str) -> pd.DataFrame:
@@ -56,40 +56,40 @@ closest_nm = df.loc[df["miss_distance_ld"].idxmin(), "name"]
 c1, c2, c3, c4 = st.columns(4, gap="medium")
 
 with c1:
-    st.html(f"""
+    st.markdown(f"""
     <div class="stat-card" style="--acc:#00d4ff">
         <div class="stat-label">Tracked this week</div>
         <div class="stat-num">{total}</div>
         <div class="stat-desc">close approaches detected</div>
     </div>
-    """)
+    """, unsafe_allow_html=True)
 with c2:
-    st.html(f"""
+    st.markdown(f"""
     <div class="stat-card" style="--acc:#e040fb">
         <div class="stat-label">Classified hazardous</div>
         <div class="stat-num">{hazardous}</div>
         <div class="stat-desc">{hazardous / max(total, 1) * 100:.0f}% of total tracked</div>
     </div>
-    """)
+    """, unsafe_allow_html=True)
 with c3:
-    st.html(f"""
+    st.markdown(f"""
     <div class="stat-card" style="--acc:#a78bfa">
         <div class="stat-label">Peak velocity (km/s)</div>
         <div class="stat-num">{fastest:.1f}</div>
         <div class="stat-desc">{fastest_nm}</div>
     </div>
-    """)
+    """, unsafe_allow_html=True)
 with c4:
-    st.html(f"""
+    st.markdown(f"""
     <div class="stat-card" style="--acc:#06b6d4">
         <div class="stat-label">Closest pass (LD)</div>
         <div class="stat-num">{closest:.2f}</div>
         <div class="stat-desc">{closest_nm}</div>
     </div>
-    """)
+    """, unsafe_allow_html=True)
 
 # ── Bar chart ──────────────────────────────────────────────────────────────────
-st.html('<p class="section-label">Approaches per day</p>')
+st.markdown('<p class="section-label">Approaches per day</p>', unsafe_allow_html=True)
 
 daily = df.groupby(df["date"].dt.date).size().reset_index(name="count")
 daily.columns = ["date", "count"]
@@ -108,16 +108,16 @@ fig_bar = go.Figure(go.Bar(
 fig_bar.add_annotation(
     x=daily.loc[max_idx, "date"].isoformat(),
     y=daily.loc[max_idx, "count"],
-    text=f"  peak &middot; {daily.loc[max_idx, 'count']}",
+    text=f"  peak · {daily.loc[max_idx, 'count']}",
     showarrow=False, yanchor="bottom",
     font=dict(color="#00d4ff", size=11),
 )
 fig_bar.update_layout(
     template="plotly_dark",
     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(color="#8892b0", family="sans-serif", size=11),
-    xaxis=dict(showgrid=False, tickfont=dict(color="#3d4460"), linecolor="#161630"),
-    yaxis=dict(gridcolor="#161630", tickfont=dict(color="#3d4460"),
+    font=dict(color="#ffffff", family="sans-serif", size=11),
+    xaxis=dict(showgrid=False, tickfont=dict(color="#ffffff"), linecolor="#161630"),
+    yaxis=dict(gridcolor="#161630", tickfont=dict(color="#ffffff"),
                title=None, zeroline=False),
     margin=dict(l=0, r=0, t=30, b=0),
     height=260, bargap=0.35,
@@ -125,15 +125,15 @@ fig_bar.update_layout(
 st.plotly_chart(fig_bar, use_container_width=True)
 
 # ── Table ──────────────────────────────────────────────────────────────────────
-st.html('<p class="section-label">Asteroid close approach table</p>')
+st.markdown('<p class="section-label">Asteroid close approach table</p>', unsafe_allow_html=True)
 
 if (df["miss_distance_ld"] < 5).any():
-    st.html("""
+    st.markdown("""
     <div class="callout">
         Rows highlighted in <span class="callout-accent">magenta</span>
-        have miss distance &lt; 5 lunar distances &mdash; considered very close approaches.
+        have miss distance < 5 lunar distances — considered very close approaches.
     </div>
-    """)
+    """, unsafe_allow_html=True)
 
 display_df = df[[
     "name", "date", "diameter_km", "velocity_kms",

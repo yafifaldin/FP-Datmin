@@ -12,18 +12,18 @@ def _inject_css():
     p = Path(__file__).parent.parent / "assets" / "style.css"
     if p.exists():
         with open(p, encoding="utf-8") as f:
-            st.html("<style>" + f.read() + "</style>")
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 _inject_css()
 
-st.html("""
-<p class="page-eyebrow">Earth's Threat Monitor &nbsp;·&nbsp; 03</p>
+st.markdown("""
+<p class="page-eyebrow">Earth's Threat Monitor  ·  03</p>
 <h1 class="page-title">Orbital Deep Dive</h1>
 <p class="page-subtitle">
     Velocity profiles by orbit class, hazard proportions,
-    magnitude&ndash;diameter relationship, and significance testing.
+    magnitude–diameter relationship, and significance testing.
 </p>
-""")
+""", unsafe_allow_html=True)
 
 @st.cache_data(ttl=7200, show_spinner="Loading orbital data...")
 def load_browse(pages: int = 5) -> pd.DataFrame:
@@ -56,7 +56,7 @@ classes = [c for c in ORBIT_COLORS if c in df["orbit_class"].unique()]
 classes += [c for c in df["orbit_class"].unique() if c not in classes]
 
 # ── Violin ─────────────────────────────────────────────────────────────────────
-st.html('<p class="section-label">Velocity by orbit class</p>')
+st.markdown('<p class="section-label">Velocity by orbit class</p>', unsafe_allow_html=True)
 
 fig_violin = go.Figure()
 for cls in classes:
@@ -72,18 +72,18 @@ for cls in classes:
 fig_violin.update_layout(
     template="plotly_dark",
     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(color="#8892b0", family="sans-serif", size=11),
+    font=dict(color="#ffffff", family="sans-serif", size=11),
     yaxis=dict(title="Velocity (km/s)", gridcolor="#161630",
-               tickfont=dict(color="#3d4460"), zeroline=False),
-    xaxis=dict(tickfont=dict(color="#8892b0")),
-    legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color="#4a5470"), borderwidth=0),
+               tickfont=dict(color="#ffffff"), zeroline=False),
+    xaxis=dict(tickfont=dict(color="#ffffff")),
+    legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color="#ffffff"), borderwidth=0),
     margin=dict(l=0, r=0, t=10, b=0),
     height=360, violingap=0.25, violinmode="group",
 )
 st.plotly_chart(fig_violin, use_container_width=True)
 
 # ── Stacked bar ────────────────────────────────────────────────────────────────
-st.html('<p class="section-label">Hazardous proportion by orbit class</p>')
+st.markdown('<p class="section-label">Hazardous proportion by orbit class</p>', unsafe_allow_html=True)
 
 haz_counts = (
     df.groupby(["orbit_class", "is_hazardous"]).size()
@@ -107,18 +107,18 @@ fig_stk.add_trace(go.Bar(
 fig_stk.update_layout(
     barmode="stack", template="plotly_dark",
     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(color="#8892b0", family="sans-serif", size=11),
-    xaxis=dict(tickfont=dict(color="#8892b0"), showgrid=False),
+    font=dict(color="#ffffff", family="sans-serif", size=11),
+    xaxis=dict(tickfont=dict(color="#ffffff"), showgrid=False),
     yaxis=dict(title="Count", gridcolor="#161630",
-               tickfont=dict(color="#3d4460"), zeroline=False),
-    legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color="#4a5470"), borderwidth=0),
+               tickfont=dict(color="#ffffff"), zeroline=False),
+    legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color="#ffffff"), borderwidth=0),
     margin=dict(l=0, r=0, t=10, b=0),
     height=300, bargap=0.3,
 )
 st.plotly_chart(fig_stk, use_container_width=True)
 
 # ── Magnitude vs diameter ──────────────────────────────────────────────────────
-st.html('<p class="section-label">Absolute magnitude vs. diameter (log&ndash;log)</p>')
+st.markdown('<p class="section-label">Absolute magnitude vs. diameter (log–log)</p>', unsafe_allow_html=True)
 
 scatter_df = df.dropna(subset=["magnitude", "diameter_km"])
 scatter_df = scatter_df[scatter_df["diameter_km"] > 0]
@@ -128,23 +128,23 @@ fig_mag = go.Figure(go.Scatter(
     marker=dict(color="#7c3aed", opacity=0.55, size=6,
                 line=dict(color="rgba(0,0,0,0)", width=0)),
     text=scatter_df["name"],
-    hovertemplate="<b>%{text}</b><br>D: %{x:.4f} km &middot; H: %{y:.1f}<extra></extra>",
+    hovertemplate="<b>%{text}</b><br>D: %{x:.4f} km · H: %{y:.1f}<extra></extra>",
 ))
 fig_mag.update_layout(
     template="plotly_dark",
     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(color="#8892b0", family="sans-serif", size=11),
+    font=dict(color="#ffffff", family="sans-serif", size=11),
     xaxis=dict(type="log", title="Diameter (km) - log scale",
-               gridcolor="#161630", tickfont=dict(color="#3d4460"), zeroline=False),
+               gridcolor="#161630", tickfont=dict(color="#ffffff"), zeroline=False),
     yaxis=dict(type="log", title="Absolute Magnitude (H) - log scale",
-               gridcolor="#161630", tickfont=dict(color="#3d4460"), zeroline=False),
+               gridcolor="#161630", tickfont=dict(color="#ffffff"), zeroline=False),
     margin=dict(l=0, r=0, t=10, b=0),
     height=340,
 )
 st.plotly_chart(fig_mag, use_container_width=True)
 
 # ── Kruskal-Wallis ─────────────────────────────────────────────────────────────
-st.html('<p class="section-label">Kruskal&ndash;Wallis test &middot; velocity across orbit classes</p>')
+st.markdown('<p class="section-label">Kruskal–Wallis test · velocity across orbit classes</p>', unsafe_allow_html=True)
 
 groups = [
     df.loc[df["orbit_class"] == cls, "velocity_kms"].dropna().values
@@ -164,7 +164,7 @@ if len(groups) >= 2:
         "No significant velocity difference found across orbit classes "
         "at the 0.05 level. Sample size may be too small to detect an effect."
     )
-    st.html(f"""
+    st.markdown(f"""
     <div class="stats-box">
         <div class="stats-box-title">Test result</div>
         <div class="stats-row">
@@ -181,6 +181,6 @@ if len(groups) >= 2:
         </div>
         <div class="stats-interpret">{interpret}</div>
     </div>
-    """)
+    """, unsafe_allow_html=True)
 else:
     st.info("Not enough groups for Kruskal-Wallis test.")
