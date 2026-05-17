@@ -164,7 +164,7 @@ yang memasukkan velocity menjadi pelengkap yang relevan untuk penilaian ancaman 
 
 st.divider()
 
-st.subheader("🧵 Benang Merah Analisis")
+st.subheader("Kesimpulan Analisis")
 
 st.markdown("Kelima halaman membentuk satu argumen utuh:")
 
