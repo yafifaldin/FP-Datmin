@@ -24,54 +24,63 @@ st.caption(f"🔵 LIVE  ·  NASA NEOWS  ·  {today}")
 st.title("☄️ Earth's Threat Monitor")
 
 st.markdown("""
-Dashboard ini bukan sekadar visualisasi data asteroid. Ini adalah **audit terhadap cara
-NASA mengklasifikasikan asteroid berbahaya** — menggunakan data dari NASA NeoWs API itu sendiri,
-ditambah teknik machine learning untuk menguji konsistensi klasifikasi tersebut.
+Dashboard ini membangun **perspektif alternatif** untuk menilai ancaman asteroid Near-Earth
+Object (NEO) berbasis data karakteristik pendekatan aktual — sebagai pelengkap klasifikasi
+PHA (Potentially Hazardous Asteroid) milik NASA yang menggunakan kriteria orbital
+jangka panjang.
 """)
 
 st.divider()
 
-st.subheader("🎯 Pertanyaan Penelitian Utama")
+st.subheader("🎯 Latar Belakang & Motivasi")
 
 st.markdown("""
-NASA menetapkan asteroid sebagai **Potentially Hazardous Asteroid (PHA)** jika memenuhi dua kriteria:
+NASA mengklasifikasikan asteroid sebagai **Potentially Hazardous Asteroid (PHA)** berdasarkan
+dua kriteria orbital:
 
-- **MOID ≤ 0.05 AU** (jarak orbit minimum dengan orbit Bumi)
-- **H ≤ 22.0** (absolute magnitude, setara diameter ≥ 140 meter)
+- **MOID ≤ 0.05 AU** — Minimum Orbit Intersection Distance, jarak orbital minimum dengan Bumi
+- **H ≤ 22.0** — Absolute magnitude, setara diameter ≥ 140 meter
 
-Yang menarik: **kecepatan asteroid (velocity) tidak dipertimbangkan dalam kriteria ini sama sekali.**
-Padahal secara fisika, energi kinetik dampak ditentukan oleh kecepatan (½ × m × v²).
+Klasifikasi ini menjawab pertanyaan: *"Apakah orbit asteroid ini berpotensi memotong orbit
+Bumi dalam jangka panjang?"*
+
+Namun klasifikasi NASA **tidak mempertimbangkan velocity** — padahal secara fisika,
+energi kinetik dampak ditentukan oleh kecepatan (½ × m × v²). Asteroid kecil tapi sangat
+cepat bisa lebih destruktif dari asteroid besar tapi lambat.
 """)
 
 st.info("""
-**Apakah kriteria klasifikasi NASA — yang berbasis threshold statis dan tidak memperhitungkan
-velocity — konsisten dengan pola dinamis yang muncul dari data pendekatan aktual?**
+**Tujuan dashboard ini:** Membangun metrik penilaian ancaman alternatif yang
+mempertimbangkan velocity dan kondisi pendekatan aktual — bukan untuk menggantikan
+klasifikasi NASA, melainkan sebagai pelengkap yang menangkap dimensi risiko berbeda.
 """)
 
 st.divider()
 
 st.subheader("🔬 Pendekatan Analisis")
 
-st.markdown("Dashboard ini menggunakan **tiga lapis analisis** yang saling menguatkan:")
+st.markdown("""
+Dashboard ini menggunakan tiga lapis analisis:
+""")
 
 col1, col2, col3 = st.columns(3, gap="medium")
 with col1:
     st.markdown("**Lapis 1 — Deskriptif**")
     st.markdown("""
-    Memvisualisasikan data asteroid langsung dari NASA NeoWs API — endpoint feed (7 hari
-    ke depan) dan browse (historis). Untuk memahami struktur dan distribusi data.
+    Visualisasi data asteroid langsung dari NASA NeoWs API. Memahami distribusi,
+    tren, dan karakteristik populasi NEO yang mendekati Bumi.
     """)
 with col2:
-    st.markdown("**Lapis 2 — Risk Score**")
+    st.markdown("**Lapis 2 — Composite Risk Score**")
     st.markdown("""
-    Membangun metrik alternatif **Composite Risk Score** = (diameter × velocity) / miss_distance,
-    yang memasukkan velocity yang diabaikan NASA, dan menggunakan jarak aktual bukan orbital.
+    Metrik alternatif berbasis karakteristik pendekatan aktual: (diameter × velocity)
+    / miss_distance. Memasukkan velocity yang tidak ada di rule NASA.
     """)
 with col3:
-    st.markdown("**Lapis 3 — ML Audit**")
+    st.markdown("**Lapis 3 — Eksplorasi Data Mining**")
     st.markdown("""
-    Menggunakan **clustering (K-Means)** dan **classification (Logistic Regression, Decision Tree,
-    Random Forest)** untuk menguji secara kuantitatif apakah pola data selaras dengan label NASA.
+    Clustering untuk memahami struktur alami data, dan classification untuk
+    eksplorasi korelasi fitur fisik dengan label NASA.
     """)
 
 st.divider()
@@ -79,22 +88,27 @@ st.divider()
 st.subheader("⚙️ Detail Teknis")
 
 st.markdown("""
-**Sumber Data:** NASA NeoWs API (https://api.nasa.gov/) — dua endpoint utama:
+**Sumber Data:** NASA NeoWs API (https://api.nasa.gov/) — dua endpoint:
 - `feed` → data pendekatan 7 hari ke depan, refresh tiap jam via `@st.cache_data(ttl=3600)`
-- `browse` → database historis lengkap dengan informasi orbital class
+- `browse` → database historis dengan informasi orbital class
 
-**Pipeline:** `requests` → `pandas` (cleaning + feature engineering) → `plotly` (visualisasi) → `scikit-learn` (ML)
+**Pipeline:** `requests` → `pandas` → `plotly` → `scikit-learn`
 
-**Fitur yang dianalisis:**
+**Fitur yang dianalisis dalam dashboard ini:**
 - `diameter_km` — estimasi diameter asteroid (midpoint min-max NASA)
-- `velocity_kms` — kecepatan relatif saat pendekatan
+- `velocity_kms` — kecepatan relatif saat pendekatan aktual
 - `miss_distance_au` — jarak aktual saat pendekatan terdekat
 - `magnitude` — absolute magnitude H
 
 **Fitur yang dipakai NASA dalam rule PHA:**
-- MOID (jarak orbital jangka panjang, bukan jarak aktual)
+- MOID (jarak orbital jangka panjang — tidak tersedia di NeoWs API)
 - H (magnitude)
-- **Velocity tidak masuk rule NASA** ← ini gap yang kami eksploitasi
+
+**Catatan penting:** Prediktor yang kami gunakan **berbeda** dari yang NASA pakai dalam
+rule PHA. Karena MOID tidak tersedia di NeoWs API, kami menggunakan miss_distance_au
+(jarak aktual) sebagai proxy. Implikasinya, model ML di dashboard ini tidak dapat
+diinterpretasikan sebagai audit terhadap rule NASA — melainkan sebagai eksplorasi
+perspektif risiko yang berbeda.
 """)
 
 st.divider()
@@ -103,86 +117,76 @@ st.subheader("📄 Navigasi Halaman")
 
 st.markdown("**`01` — Live NEO Feed**")
 st.markdown("""
-**Apa yang ditampilkan:** Snapshot real-time semua asteroid yang akan mendekati Bumi dalam 7 hari ke depan.
-Empat metric utama (jumlah, hazardous count, peak velocity, closest pass), distribusi per hari,
-dan tabel interaktif lengkap.
+**Apa yang ditampilkan:** Snapshot real-time semua asteroid yang akan mendekati Bumi dalam
+7 hari ke depan. Empat metric utama (jumlah, hazardous count, peak velocity, closest pass),
+distribusi per hari, dan tabel interaktif lengkap.
 
 **Apa yang dipelajari:** Konteks awal — seberapa banyak asteroid yang lewat tiap minggu,
-seberapa besar, seberapa cepat, seberapa dekat. Tabel ini juga jadi titik awal untuk
-melihat asteroid spesifik yang nanti kembali muncul di analisis risk score.
+seberapa besar, seberapa cepat, seberapa dekat.
 """)
 
 st.markdown("**`02` — Risk Analysis**")
 st.markdown("""
-**Apa yang ditampilkan:** Composite Risk Score diterapkan ke data minggu ini.
-Scatter plot multivariabel (velocity vs miss distance, ukuran = diameter, warna = hazardous NASA),
-ranking top-15 berdasarkan risk score, dan donut chart distribusi risiko.
+**Apa yang ditampilkan:** Composite Risk Score diterapkan ke data minggu ini. Scatter plot
+multivariabel, ranking top-15 berdasarkan risk score, dan donut chart distribusi risiko.
 
-**Apa yang dipelajari:** Temuan awal — beberapa asteroid dengan risk score tinggi
-**tidak di-label hazardous oleh NASA.** Ini observasi yang memunculkan pertanyaan:
-apakah klasifikasi NASA memang tidak konsisten? Pertanyaan ini yang dijawab page 5.
+**Apa yang dipelajari:** Asteroid mana yang paling mengancam minggu ini berdasarkan
+perspektif pendekatan aktual — mungkin berbeda dari yang di-label hazardous oleh NASA.
 """)
 
 st.markdown("**`03` — Orbital Deep Dive**")
 st.markdown("""
-**Apa yang ditampilkan:** Analisis berdasarkan kelas orbit asteroid (Apollo, Amor, Aten, Atira).
-Violin plot distribusi velocity per kelas, stacked bar proporsi hazardous, dan
-**uji statistik Kruskal-Wallis** untuk verifikasi signifikansi perbedaan antar kelas.
+**Apa yang ditampilkan:** Analisis berdasarkan kelas orbit asteroid (Apollo, Amor, Aten,
+Atira). Violin plot distribusi velocity per kelas, stacked bar proporsi hazardous, dan
+uji Kruskal-Wallis untuk signifikansi statistik.
 
-**Apa yang dipelajari:** Apakah kelas orbit yang berbeda memiliki karakteristik velocity
-yang berbeda secara signifikan? Kalau ya, ini bukti bahwa velocity adalah variabel
-diskriminatif — yang seharusnya jadi pertimbangan dalam klasifikasi hazardous.
+**Apa yang dipelajari:** Apakah velocity berbeda signifikan antar kelas orbit — apakah
+variabel yang NASA abaikan ini memang diskriminatif secara statistik.
 """)
 
 st.markdown("**`04` — Historical Trends**")
 st.markdown("""
 **Apa yang ditampilkan:** Tren 6 bulan terakhir dari data pendekatan asteroid.
-Line chart miss distance bulanan, histogram distribusi diameter (log scale),
-dan frekuensi pendekatan sangat dekat (< 10 Lunar Distance) per bulan.
+Line chart miss distance bulanan, histogram distribusi diameter (log scale), dan
+frekuensi pendekatan sangat dekat per bulan.
 
-**Apa yang dipelajari:** Konteks temporal — apakah ada pola seasonal atau tren naik/turun
-dalam frekuensi pendekatan. Berguna untuk memahami baseline normal sebelum menarik
-kesimpulan tentang minggu tertentu.
+**Apa yang dipelajari:** Konteks temporal — pola pendekatan asteroid dan baseline normal.
 """)
 
-st.markdown("**`05` — Machine Learning Analysis**")
+st.markdown("**`05` — Data Mining Exploration**")
 st.markdown("""
-**Apa yang ditampilkan:** Audit kuantitatif klasifikasi NASA menggunakan dua pendekatan
-ML yang saling menguatkan.
+**Apa yang ditampilkan:** Dua analisis data mining yang saling melengkapi.
 
-**Clustering (K-Means):** Mengelompokkan asteroid berdasarkan fitur fisik tanpa mengetahui
-label NASA, lalu membandingkan apakah kelompok yang terbentuk selaras dengan klasifikasi NASA.
+**Clustering (K-Means):** Mengelompokkan asteroid berdasarkan kemiripan karakteristik fisik
+(diameter, velocity, miss_distance, magnitude) tanpa menggunakan label NASA. Cluster diberi
+nama berdasarkan karakteristik centroid (bukan interpretasi risiko subjektif).
 
-**Classification (LR vs DT vs RF):** Tiga model dilatih untuk mereplikasi label NASA dari
-data fisik. Jika model konsisten kesulitan, itu bukti bahwa label NASA mengandung
-informasi yang tidak tertangkap dari fitur fisik saja.
+**Classification (LR vs DT vs RF):** Eksperimen eksploratif untuk mengukur korelasi antara
+fitur fisik pendekatan aktual dengan label PHA NASA. Karena prediktor yang kami punya
+berbeda dari rule NASA, hasilnya menunjukkan **sejauh mana karakteristik pendekatan aktual
+berkorelasi dengan klasifikasi orbital NASA**.
 
-**Apa yang dipelajari:** Bukti kuantitatif final untuk argumen utama dashboard — pola data
-fisik aktual tidak sepenuhnya selaras dengan rule PHA NASA, sehingga Composite Risk Score
-yang memasukkan velocity menjadi pelengkap yang relevan untuk penilaian ancaman dinamis.
+**Apa yang dipelajari:** Pengelompokan alami asteroid berdasarkan karakteristik fisik, dan
+pemetaan antara dimensi pendekatan aktual vs dimensi orbital NASA.
 """)
 
 st.divider()
 
-st.subheader("Kesimpulan Analisis")
-
-st.markdown("Kelima halaman membentuk satu argumen utuh:")
+st.subheader("🧵 Posisi Akhir")
 
 st.markdown("""
-1. **Page 1** menampilkan data sebagaimana adanya — apa yang sedang terjadi minggu ini
-2. **Page 2** memperkenalkan Composite Risk Score dan menemukan **observasi awal**:
-   ada asteroid dengan risk score tinggi yang tidak di-label hazardous oleh NASA
-3. **Page 3** menunjukkan bahwa velocity (variabel yang NASA abaikan) sebenarnya **berbeda
-   signifikan** antar kelas orbit — secara statistik terbukti diskriminatif
-4. **Page 4** memberikan **konteks historis** — pola pendekatan asteroid selama 6 bulan
-5. **Page 5** memberikan **bukti kuantitatif final** melalui ML — pola data dan rule NASA
-   memang tidak sepenuhnya selaras
+Penelitian ini tidak mengklaim NASA salah atau klasifikasinya inkonsisten. NASA
+mengklasifikasikan dari **perspektif orbital jangka panjang** menggunakan MOID — dan
+itu valid untuk tujuannya.
+
+Yang kami tawarkan adalah **perspektif kedua yang independen**: penilaian ancaman berbasis
+karakteristik pendekatan aktual, termasuk velocity yang tidak ada di rule NASA.
 """)
 
 st.success("""
-**Kesimpulan akhir:** Klasifikasi PHA NASA optimal untuk tujuannya sendiri (potensi orbital
-jangka panjang), tapi tidak menangkap dinamika ancaman pada pendekatan spesifik. Composite
-Risk Score yang mempertimbangkan velocity dan jarak aktual mengisi gap analitik ini.
+**Kontribusi utama:** Composite Risk Score sebagai metrik pelengkap yang menangkap dimensi
+ancaman dinamis pada pendekatan spesifik — informasi yang tidak tertangkap oleh klasifikasi
+PHA NASA yang berbasis orbital jangka panjang.
 """)
 
 st.caption("Pilih halaman dari sidebar untuk mulai eksplorasi →")

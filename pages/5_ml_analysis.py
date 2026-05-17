@@ -29,41 +29,41 @@ def _inject_css():
 _inject_css()
 
 st.caption("EARTH'S THREAT MONITOR  ·  05")
-st.title("Machine Learning Analysis")
+st.title("Data Mining Exploration")
 st.markdown("""
-Audit kuantitatif klasifikasi PHA NASA menggunakan unsupervised clustering (K-Means)
-dan supervised classification (Logistic Regression, Decision Tree, Random Forest).
+Eksplorasi struktur data asteroid menggunakan unsupervised clustering (K-Means)
+dan eksperimen korelasi via supervised classification (Logistic Regression,
+Decision Tree, Random Forest).
 """)
 
 st.divider()
 
 # ── Konteks Awal ──────────────────────────────────────────────────────────────
-st.subheader("📍 Konteks: Apa yang Kita Audit?")
+st.subheader("📍 Konteks & Keterbatasan Metodologi")
 
 st.markdown("""
-Di halaman sebelumnya kita sudah menemukan **observasi awal**: ada asteroid dengan
-Composite Risk Score tinggi yang tidak di-label hazardous oleh NASA. Halaman ini
-mengubah observasi tersebut menjadi **bukti kuantitatif** melalui dua metode ML.
-
-**Yang penting dipahami:** Kita tidak mengaudit perhitungan fisika orbital NASA — itu
-sudah presisi dan tidak perlu dipertanyakan. Yang kita audit adalah **keputusan
-klasifikasinya** — apakah threshold MOID ≤ 0.05 AU dan H ≤ 22 mencerminkan pola
-yang ada di data fisik asteroid?
+Sebelum menampilkan hasil, penting untuk eksplisit tentang **apa yang halaman ini lakukan
+dan tidak lakukan**.
 """)
 
-st.info("""
-**Fitur yang NASA pakai dalam rule PHA:** MOID (jarak orbital) + H (magnitude)
+st.warning("""
+**Keterbatasan inheren:** Prediktor yang tersedia di NASA NeoWs API (diameter, velocity,
+miss_distance_au, magnitude) **berbeda** dari prediktor yang NASA gunakan dalam rule PHA
+(MOID + H). MOID tidak tersedia di NeoWs API.
 
-**Fitur yang kita pakai di ML:** diameter, velocity, miss_distance, magnitude
-
-**Gap utama:** Velocity tidak ada di rule NASA, tapi secara fisika krusial untuk
-menentukan energi kinetik dampak.
+**Konsekuensinya:**
+- Classification di halaman ini **bukan** audit terhadap rule NASA — kalau model gagal
+  mereplikasi label NASA, itu wajar karena prediktornya memang berbeda
+- Clustering memberi label cluster berdasarkan **karakteristik centroid** (Large/Fast/Close
+  dst), bukan interpretasi "risk" yang subjektif
+- Yang valid dipelajari adalah: **pola pengelompokan alami asteroid** dan **sejauh mana
+  fitur pendekatan aktual berkorelasi dengan klasifikasi orbital NASA**
 """)
 
 st.divider()
 
 # ── Load data ─────────────────────────────────────────────────────────────────
-@st.cache_data(ttl=7200, show_spinner="Loading data for ML analysis...")
+@st.cache_data(ttl=7200, show_spinner="Loading data for analysis...")
 def load_data(pages: int = 8) -> pd.DataFrame:
     frames = []
     for p in range(pages):
@@ -88,7 +88,7 @@ df_ml = df.dropna(subset=features + ["is_hazardous"]).reset_index(drop=True)
 df_ml = df_ml[df_ml["diameter_km"] > 0].reset_index(drop=True)
 
 if len(df_ml) < 20:
-    st.warning("Not enough data for ML analysis.")
+    st.warning("Not enough data for analysis.")
     st.stop()
 
 X = df_ml[features].values
@@ -100,7 +100,7 @@ n_nonhaz = n_total - n_haz
 
 st.markdown(f"""
 **Dataset:** {n_total} asteroid dari endpoint `browse` NASA  
-**Imbalanced class:** {n_haz} hazardous ({n_haz/n_total*100:.1f}%) vs {n_nonhaz} non-hazardous ({n_nonhaz/n_total*100:.1f}%)
+**Distribusi class:** {n_haz} hazardous ({n_haz/n_total*100:.1f}%) vs {n_nonhaz} non-hazardous ({n_nonhaz/n_total*100:.1f}%) — moderately imbalanced
 """)
 
 st.divider()
@@ -111,14 +111,12 @@ st.divider()
 st.subheader("🔵 Section 1 — K-Means Clustering")
 
 st.markdown("""
-**Logika audit:** K-Means tidak tahu label NASA sama sekali. Dia hanya melihat fitur fisik
-asteroid dan mengelompokkan secara alami berdasarkan kemiripan. Setelah cluster terbentuk,
-kita overlay label NASA ke atasnya.
+**Tujuan:** Mengelompokkan asteroid berdasarkan kemiripan karakteristik fisik aktual,
+tanpa menggunakan label NASA sama sekali. Murni eksplorasi struktur alami data.
 
-**Apa yang dicari:** Apakah cluster "High Risk" yang terbentuk dari data secara alami
-selaras dengan asteroid yang di-label hazardous NASA?
-- Kalau **selaras** → klasifikasi NASA konsisten dengan struktur data
-- Kalau **tidak selaras** → label NASA tidak mencerminkan pola alami data
+**Yang diharapkan dipelajari:** Pola pengelompokan asteroid berdasarkan empat dimensi
+karakteristik fisik. Setelah cluster terbentuk, kita overlay label NASA untuk melihat
+**apakah ada korelasi** — bukan untuk klaim NASA salah atau benar.
 """)
 
 scaler = StandardScaler()
@@ -134,9 +132,9 @@ for k in k_range:
 
 st.markdown("**Step 1: Penentuan jumlah cluster optimal (Elbow Method)**")
 st.markdown("""
-Elbow method menguji k=2 sampai k=7, mengukur inertia (seberapa rapat tiap cluster).
-Kita memilih k=3 — bukan k=2 yang terlalu mirip label biner NASA, dan bukan k=4 ke atas
-yang terlalu granular untuk diinterpretasikan.
+Elbow method menguji k=2 sampai k=7. Kami memilih **k=3** sebagai jalan tengah antara
+kesederhanaan (k=2 terlalu mirip label biner NASA) dan granularitas (k=4+ terlalu sulit
+diinterpretasikan secara substantif).
 """)
 
 fig_elbow = go.Figure(go.Scatter(
@@ -174,39 +172,53 @@ centroids_scaled = kmeans.cluster_centers_
 centroids_original = scaler.inverse_transform(centroids_scaled)
 centroid_df = pd.DataFrame(centroids_original, columns=features)
 
-# Auto-label clusters by risk
-risk_avg = df_ml.groupby("cluster").apply(
-    lambda g: (g["diameter_km"].mean() * g["velocity_kms"].mean()) / (g["miss_distance_au"].mean() + 1e-9)
-)
-sorted_clusters = risk_avg.sort_values().index.tolist()
-cluster_labels = {sorted_clusters[0]: "Low Risk", sorted_clusters[1]: "Medium Risk", sorted_clusters[2]: "High Risk"}
-df_ml["cluster_label"] = df_ml["cluster"].map(cluster_labels)
+# Auto-label clusters by characteristic, not subjective risk
+# Logic: smallest diameter + slowest + farthest = "Small Slow Distant"
+#        largest diameter + fastest + closest = "Large Fast Close"
+sort_key = (
+    centroid_df["diameter_km"].rank(ascending=True) +
+    centroid_df["velocity_kms"].rank(ascending=True) +
+    (1 / centroid_df["miss_distance_au"]).rank(ascending=True)
+).sort_values()
 
-cluster_colors = {"Low Risk": "#06b6d4", "Medium Risk": "#7c3aed", "High Risk": "#e040fb"}
+ordered_clusters = sort_key.index.tolist()
+char_labels = {
+    ordered_clusters[0]: "Small · Slow · Distant",
+    ordered_clusters[1]: "Mid-range",
+    ordered_clusters[2]: "Large · Fast · Close",
+}
+df_ml["cluster_label"] = df_ml["cluster"].map(char_labels)
+
+cluster_colors = {
+    "Small · Slow · Distant": "#06b6d4",
+    "Mid-range": "#7c3aed",
+    "Large · Fast · Close": "#e040fb",
+}
 
 st.markdown("**Step 2: Karakteristik tiap cluster yang terbentuk**")
 st.markdown("""
-Setelah K-Means konvergen, tiap cluster punya centroid yang merepresentasikan asteroid
-"tipikal" dari kelompok tersebut. Label Low/Medium/High Risk ditentukan berdasarkan
-nilai centroid masing-masing.
+Setiap cluster diberi nama deskriptif berdasarkan nilai centroid masing-masing — bukan
+interpretasi "risk" yang subjektif. Nama hanya mencerminkan apa adanya dari data:
+ukuran rata-rata, kecepatan rata-rata, jarak rata-rata.
 """)
 
 centroid_display = centroid_df.round(4)
 centroid_display.columns = ["Diameter (km)", "Velocity (km/s)", "Miss Dist (AU)", "Magnitude"]
-centroid_display.insert(0, "Cluster", [cluster_labels[i] for i in range(3)])
-centroid_display = centroid_display.sort_values("Cluster", key=lambda x: x.map({"Low Risk": 0, "Medium Risk": 1, "High Risk": 2}))
+centroid_display.insert(0, "Cluster", [char_labels[i] for i in range(3)])
+order_map = {"Small · Slow · Distant": 0, "Mid-range": 1, "Large · Fast · Close": 2}
+centroid_display = centroid_display.sort_values("Cluster", key=lambda x: x.map(order_map))
 st.dataframe(centroid_display, use_container_width=True, hide_index=True)
 
 # Scatter
 st.markdown("**Step 3: Visualisasi cluster di feature space**")
 st.markdown("""
 Scatter plot di bawah menunjukkan distribusi asteroid pada dua dimensi utama
-(miss distance dan velocity), dengan warna mewakili cluster hasil K-Means.
+(miss distance vs velocity), dengan warna mewakili cluster hasil K-Means.
 Ukuran titik proporsional dengan diameter.
 """)
 
 fig_cluster = go.Figure()
-for label in ["Low Risk", "Medium Risk", "High Risk"]:
+for label in ["Small · Slow · Distant", "Mid-range", "Large · Fast · Close"]:
     subset = df_ml[df_ml["cluster_label"] == label]
     fig_cluster.add_trace(go.Scatter(
         x=subset["miss_distance_au"],
@@ -243,29 +255,40 @@ st.plotly_chart(fig_cluster, use_container_width=True)
 # Crosstab
 st.markdown("**Step 4: Crosstab cluster vs label hazardous NASA**")
 st.markdown("""
-Inilah inti audit clustering. Tabel di bawah menunjukkan berapa asteroid dari tiap cluster
-yang di-label hazardous oleh NASA. Kalau klasifikasi NASA konsisten dengan pola data,
-cluster High Risk harusnya didominasi asteroid hazardous.
+Tabel di bawah menunjukkan berapa asteroid dari tiap cluster yang di-label hazardous
+oleh NASA. Pertanyaan yang bisa dijawab: **apakah ada korelasi antara karakteristik
+fisik pendekatan dengan klasifikasi orbital NASA?**
+
+Karena prediktor kami (miss_distance_au) berbeda dari yang NASA pakai (MOID), kami
+**tidak mengharapkan** korelasi sempurna. Yang kami lihat adalah: pada cluster mana
+asteroid hazardous NASA cenderung berkumpul.
 """)
 
 crosstab = pd.crosstab(
     df_ml["cluster_label"],
     df_ml["is_hazardous"].map({True: "Hazardous", False: "Non-Hazardous"}),
 )
-crosstab = crosstab.reindex(["Low Risk", "Medium Risk", "High Risk"])
+crosstab = crosstab.reindex(["Small · Slow · Distant", "Mid-range", "Large · Fast · Close"])
 st.dataframe(crosstab, use_container_width=True)
 
-high_risk_count = len(df_ml[df_ml["cluster_label"] == "High Risk"])
-high_risk_haz = len(df_ml[(df_ml["cluster_label"] == "High Risk") & (df_ml["is_hazardous"])])
-high_risk_pct = (high_risk_haz / max(high_risk_count, 1)) * 100
+lfc_count = len(df_ml[df_ml["cluster_label"] == "Large · Fast · Close"])
+lfc_haz = len(df_ml[(df_ml["cluster_label"] == "Large · Fast · Close") & (df_ml["is_hazardous"])])
+lfc_pct = (lfc_haz / max(lfc_count, 1)) * 100
 
-st.warning(f"""
-**Temuan Clustering:** Dari **{high_risk_count}** asteroid yang masuk cluster High Risk,
-hanya **{high_risk_haz} ({high_risk_pct:.0f}%)** yang di-label hazardous oleh NASA.
+ssd_count = len(df_ml[df_ml["cluster_label"] == "Small · Slow · Distant"])
+ssd_haz = len(df_ml[(df_ml["cluster_label"] == "Small · Slow · Distant") & (df_ml["is_hazardous"])])
+ssd_pct = (ssd_haz / max(ssd_count, 1)) * 100
 
-**Interpretasi:** Mayoritas asteroid di cluster High Risk — yang secara karakteristik fisik
-(besar, cepat, dekat) seharusnya berisiko — justru **tidak** masuk klasifikasi PHA NASA.
-Ini bukti pertama bahwa pola data fisik tidak selaras dengan rule NASA.
+st.info(f"""
+**Observasi:**
+
+- **Large · Fast · Close** ({lfc_count} asteroid): **{lfc_haz} ({lfc_pct:.0f}%)** di-label hazardous NASA
+- **Small · Slow · Distant** ({ssd_count} asteroid): **{ssd_haz} ({ssd_pct:.0f}%)** di-label hazardous NASA
+
+**Interpretasi (tanpa overclaim):** Korelasi antara karakteristik fisik dan label NASA
+ada, tapi tidak sempurna. Ini wajar karena dua sistem klasifikasi (pendekatan aktual
+vs orbital jangka panjang) mengukur dimensi yang berbeda — bukan indikasi salah satunya
+salah.
 """)
 
 st.divider()
@@ -273,15 +296,16 @@ st.divider()
 # ═══════════════════════════════════════════════════════════════════════════════
 # SECTION 2: CLASSIFICATION
 # ═══════════════════════════════════════════════════════════════════════════════
-st.subheader("🟣 Section 2 — Classification (3 Model Comparison)")
+st.subheader("🟣 Section 2 — Classification (Eksperimen Korelasi)")
 
 st.markdown("""
-**Logika audit:** Kalau rule NASA sederhana dan konsisten dengan data, model ML harusnya
-bisa belajar mereplikasi rule tersebut dengan mudah. Kalau model konsisten kesulitan,
-berarti rule NASA mengandung informasi yang tidak ada di fitur fisik dasar.
+**Tujuan:** Mengukur sejauh mana fitur pendekatan aktual (diameter, velocity,
+miss_distance_au, magnitude) berkorelasi dengan label PHA NASA. Tiga model dengan
+kompleksitas berbeda digunakan untuk melihat konsistensi pola.
 
-**Mengapa 3 model?** Tiap model punya asumsi berbeda — kalau ketiganya menghasilkan
-pola yang sama, kesimpulan jauh lebih kuat dibanding satu model saja.
+**Yang BUKAN tujuan kami:** Membuktikan rule NASA salah atau benar. Karena prediktor
+berbeda dari awal, model yang gagal mereplikasi label NASA bukan bukti inkonsistensi NASA —
+itu hanya menunjukkan bahwa kedua sistem mengukur hal yang berbeda.
 """)
 
 with st.expander("📖 Penjelasan tiap model"):
@@ -289,12 +313,11 @@ with st.expander("📖 Penjelasan tiap model"):
     **Logistic Regression (LR)** — Model paling sederhana, asumsi hubungan linear antara
     fitur dan target. Berfungsi sebagai **baseline**.
     
-    **Decision Tree (DT)** — Belajar rule berbasis threshold seperti "jika MOID < X dan H < Y
-    maka hazardous". Paling mirip dengan cara NASA mengklasifikasi.
+    **Decision Tree (DT)** — Belajar rule berbasis threshold seperti "jika X < a dan Y < b
+    maka hazardous". Mirip dengan cara NASA mengklasifikasi (threshold-based).
     
-    **Random Forest (RF)** — Ensemble dari banyak decision tree. Biasanya lebih akurat
-    karena bisa menangkap interaksi antar fitur. Tapi pada dataset kecil, kadang
-    overfit dan kalah dari model sederhana.
+    **Random Forest (RF)** — Ensemble dari banyak decision tree. Biasanya lebih akurat,
+    tapi pada dataset kecil bisa overfit dan kalah dari model sederhana.
     """)
 
 if y.sum() < 2:
@@ -307,7 +330,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 models = {
     "Logistic Regression": LogisticRegression(class_weight="balanced", max_iter=1000, random_state=42),
-    "Decision Tree": DecisionTreeClassifier(class_weight="balanced", max_depth=5, random_state=42),
+    "Decision Tree": DecisionTreeClassifier(class_weight="balanced", max_depth=3, random_state=42),
     "Random Forest": RandomForestClassifier(class_weight="balanced", n_estimators=100, max_depth=8, random_state=42),
 }
 
@@ -377,8 +400,9 @@ st.plotly_chart(fig_metrics, use_container_width=True)
 st.markdown("**Step 3: Feature Importance dari Random Forest**")
 st.markdown("""
 Feature importance menunjukkan fitur mana yang paling sering dipakai Random Forest
-untuk memprediksi label NASA. Ini secara tidak langsung menunjukkan fitur mana
-yang paling berkorelasi dengan rule NASA.
+untuk memprediksi label NASA. Ini menunjukkan **fitur pendekatan aktual mana yang
+paling berkorelasi dengan klasifikasi orbital NASA** — bukan fitur yang NASA pakai
+secara langsung (NASA pakai MOID yang tidak ada di data kami).
 """)
 
 rf = models["Random Forest"]
@@ -410,13 +434,13 @@ top_importance = importance_df.iloc[-1]["Importance"]
 velocity_importance = importance_df[importance_df["Feature"] == "velocity_kms"]["Importance"].values[0]
 
 st.markdown(f"""
-**Interpretasi Feature Importance:**
-- Fitur paling berpengaruh: **{top_feature}** (importance: {top_importance:.3f})
+**Interpretasi:**
+- Fitur paling berkorelasi dengan label NASA: **{top_feature}** ({top_importance:.3f})
 - Velocity importance: **{velocity_importance:.3f}**
 
-Ini sejalan dengan kriteria PHA NASA — fitur yang paling penting adalah yang berkorelasi
-dengan MOID dan H. Velocity, meski secara fisika krusial untuk energi dampak, kurang
-berpengaruh dalam memprediksi label NASA — karena memang tidak ada di rule mereka.
+Hasil ini konsisten dengan ekspektasi — magnitude (satu-satunya fitur yang overlap dengan
+prediktor NASA H) menjadi salah satu yang paling penting. Velocity berkorelasi lemah
+karena memang tidak ada di rule NASA.
 """)
 
 # Confusion matrix
@@ -425,13 +449,13 @@ best_f1 = results_df[results_df["Model"] == best_model_name]["F1-Score"].values[
 
 st.markdown(f"**Step 4: Confusion Matrix — {best_model_name} (F1 tertinggi: {best_f1:.3f})**")
 st.markdown(f"""
-Confusion matrix menunjukkan detail prediksi vs reality untuk model dengan F1 terbaik.
-Kita pilih berdasarkan F1, bukan accuracy, karena data imbalanced.
+Confusion matrix model dengan F1 terbaik. F1 dipilih sebagai kriteria karena data
+imbalanced — accuracy bisa misleading.
 
-- **TP** (True Positive) — hazardous, diprediksi hazardous ✅
-- **TN** (True Negative) — non-haz, diprediksi non-haz ✅
-- **FP** (False Positive) — non-haz, diprediksi hazardous (false alarm)
-- **FN** (False Negative) — hazardous, diprediksi non-haz (paling berbahaya — miss!)
+- **TP** — hazardous, diprediksi hazardous ✅
+- **TN** — non-haz, diprediksi non-haz ✅
+- **FP** — non-haz, diprediksi hazardous (false alarm)
+- **FN** — hazardous, diprediksi non-haz (miss detection)
 """)
 
 y_pred_best = predictions[best_model_name]
@@ -462,23 +486,16 @@ fig_cm.update_layout(
 )
 st.plotly_chart(fig_cm, use_container_width=True)
 
-fp_count = int(((y_pred_best == 1) & (y_test == 0)).sum())
-fn_count = int(((y_pred_best == 0) & (y_test == 1)).sum())
+st.info(f"""
+**Interpretasi (jujur tanpa overclaim):**
 
-st.warning(f"""
-**Temuan Classification:** F1-Score terbaik hanya **{best_f1:.3f}** — model konsisten
-kesulitan mereplikasi label NASA secara presisi dari fitur fisik saja. Khususnya:
+F1-Score terbaik adalah **{best_f1:.3f}** — menunjukkan korelasi moderat antara fitur
+pendekatan aktual dengan label PHA NASA. Bukan korelasi sempurna, dan **tidak diharapkan**
+sempurna karena prediktor yang dipakai berbeda dari rule NASA.
 
-- **{fp_count} asteroid** diprediksi hazardous oleh model **tapi NASA bilang tidak** —
-  kandidat yang fitur fisiknya mirip hazardous tapi tidak memenuhi threshold MOID NASA.
-  
-- **{fn_count} asteroid** sebenarnya hazardous tapi model gagal mendeteksi — menunjukkan
-  bahwa label NASA mengandung informasi orbital yang tidak ada di fitur fisik dasar kami.
-
-**Interpretasi:** Rule NASA berbasis fitur orbital (MOID) yang tidak ada di dataset kami,
-sehingga model dari diameter + velocity + miss_distance + magnitude saja tidak cukup
-untuk replikasi sempurna. Tapi justru di sini letak temuan analitiknya — fitur fisik
-aktual dan rule orbital NASA memang dua hal yang berbeda.
+Yang bisa disimpulkan: fitur pendekatan aktual menangkap **sebagian** sinyal yang ada di
+label NASA — kemungkinan melalui korelasi tidak langsung (asteroid dengan MOID rendah
+cenderung juga punya miss_distance rendah pada banyak pendekatan).
 """)
 
 st.divider()
@@ -486,30 +503,29 @@ st.divider()
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONCLUSION
 # ═══════════════════════════════════════════════════════════════════════════════
-st.subheader("🎯 Kesimpulan Audit ML")
+st.subheader("🎯 Kesimpulan Eksplorasi")
 
 st.markdown(f"""
-Dua pendekatan ML dari arah yang berbeda menghasilkan kesimpulan yang konsisten:
+**Dari Clustering:**  
+Asteroid mengelompok secara alami ke dalam 3 cluster berdasarkan karakteristik fisik —
+Small/Slow/Distant, Mid-range, dan Large/Fast/Close. Korelasi dengan label hazardous NASA
+ada tapi tidak sempurna ({lfc_pct:.0f}% hazardous di cluster Large/Fast/Close).
 
-**Dari Clustering (bottom-up):**  
-Hanya {high_risk_pct:.0f}% asteroid di cluster High Risk yang di-label hazardous NASA.
-Pola alami data tidak selaras dengan klasifikasi NASA.
-
-**Dari Classification (top-down):**  
-F1-Score terbaik hanya {best_f1:.3f}. Model kesulitan mempelajari rule NASA dari
-fitur fisik dasar, mengindikasikan rule NASA mengandung informasi yang tidak
-sepenuhnya tertangkap dari diameter, velocity, miss_distance, dan magnitude.
+**Dari Classification:**  
+Fitur pendekatan aktual (diameter, velocity, miss_distance, magnitude) berkorelasi
+**moderat** dengan label NASA — F1-Score terbaik {best_f1:.3f}. Korelasi sempurna tidak
+diharapkan karena prediktor berbeda dari rule NASA.
 """)
 
 st.success("""
-**Kesimpulan Final:** Klasifikasi PHA NASA didasarkan pada **fitur orbital jangka panjang
-(MOID)** yang berbeda dari **fitur fisik pendekatan aktual** (diameter, velocity, miss_distance).
-Keduanya bukan saling bertentangan — melainkan menjawab pertanyaan yang berbeda:
+**Posisi akhir yang jujur:**
 
-- **NASA:** "Apakah orbit asteroid ini berpotensi memotong orbit Bumi dalam ratusan tahun?"
-- **Risk Score kami:** "Seberapa berbahaya pendekatan asteroid ini hari ini?"
+Analisis di halaman ini **tidak** memberikan bukti bahwa rule NASA salah atau inkonsisten —
+karena prediktor yang kami punya berbeda dari yang NASA pakai. Yang dipelajari adalah
+bahwa fitur pendekatan aktual dan klasifikasi orbital NASA mengukur dimensi risiko yang
+berbeda namun memiliki korelasi moderat.
 
-Audit ML ini memperkuat argumen bahwa **Composite Risk Score adalah pelengkap, bukan
-pengganti**, klasifikasi PHA NASA — keduanya dibutuhkan untuk penilaian ancaman yang
-komprehensif.
+**Kontribusi utama dashboard ini tetap pada Composite Risk Score di Page 2** — metrik
+alternatif berbasis pendekatan aktual yang memasukkan velocity, melengkapi (bukan
+menggantikan) klasifikasi PHA NASA yang berbasis orbital jangka panjang.
 """)
