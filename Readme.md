@@ -24,6 +24,7 @@ pages/
   2_risk_analysis.py          # scatter, top-15 bar, risk label donut
   3_orbital_deepdive.py       # violin, stacked bar, log-log scatter, K-W test
   4_historical_trend.py       # line, histogram, monthly bar, summary table
+  5_ml_analysis.py
 utils/
   fetch_data.py               # NASA API calls + pickle cache
   clean_data.py               # JSON → DataFrame parsers
