@@ -51,7 +51,7 @@ with col1:
     st.markdown("**`01` — Live NEO Feed**")
     st.markdown("""
     Menampilkan asteroid yang mendekati Bumi dalam window 7 hari ke depan secara real-time.
-    Dilengkapi 4 metric card (total NEO, jumlah hazardous, kecepatan tertinggi, jarak terdekat),
+    Dilengkapi 4 metric card (total NEO, jumlah hazardous (labeled by NASA), kecepatan tertinggi, jarak terdekat),
     bar chart distribusi harian, dan tabel interaktif dengan highlight untuk objek di bawah
     5 Lunar Distance.
     """)
