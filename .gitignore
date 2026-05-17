@@ -1,5 +1,8 @@
 .env
 data/cache.pkl
 __pycache__/
-.DS_Store
+**/__pycache__/
 *.pyc
+*.pyo
+.DS_Store
+.claude/

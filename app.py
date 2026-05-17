@@ -21,11 +21,11 @@ with st.sidebar:
     st.html("""
     <div style="padding: 1.5rem 1rem 1rem;">
         <div style="font-size:0.62rem; letter-spacing:2px; text-transform:uppercase;
-                    color:#2a2e4a; margin-bottom:8px;">Navigation</div>
+                    color:#4a5470; margin-bottom:8px;">Navigation</div>
         <div style="font-size:1rem; font-weight:700; color:#e8eeff; margin-bottom:2px;">
             Earth's Threat Monitor
         </div>
-        <div style="font-size:0.72rem; color:#2a2e4a;">NASA NeoWs API</div>
+        <div style="font-size:0.72rem; color:#4a5470;">NASA NeoWs API</div>
     </div>
     <div style="height:1px; background:#161630; margin:0 1rem 1rem;"></div>
     """)

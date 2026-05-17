@@ -8,12 +8,6 @@ from utils.fetch_data import get_feed
 from utils.clean_data import parse_feed
 from utils.scoring import add_risk_score, add_risk_label
 
-st.set_page_config(
-    page_title="Risk Analysis · Earth's Threat Monitor",
-    page_icon="☄️",
-    layout="wide",
-)
-
 def _inject_css():
     p = Path(__file__).parent.parent / "assets" / "style.css"
     if p.exists():

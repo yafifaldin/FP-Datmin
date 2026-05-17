@@ -8,12 +8,6 @@ from utils.fetch_data import get_cached_historical
 from utils.clean_data import merge_historical_feeds
 from utils.scoring import add_risk_score
 
-st.set_page_config(
-    page_title="Historical Trends · Earth's Threat Monitor",
-    page_icon="☄️",
-    layout="wide",
-)
-
 def _inject_css():
     p = Path(__file__).parent.parent / "assets" / "style.css"
     if p.exists():
